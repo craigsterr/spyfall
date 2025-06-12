@@ -1,10 +1,11 @@
 "use client";
 
 import React, { use, useEffect, useState } from "react";
-import EndGame from "./EndGame";
 import { supabase } from "@/lib/supabaseClient";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useRef } from "react";
+import { closeLobby } from "@/lib/lobby";
+import { useRouter } from "next/navigation";
 
 type Player = {
   name?: string;
@@ -19,6 +20,7 @@ export default function Lobby({
 }: {
   params: Promise<{ code: string }>;
 }) {
+  const router = useRouter();
   const resolvedParams = use(params);
   const lobbyCode = resolvedParams.code as string;
   const buttonStyle = "py-3 w-30 rounded-full text-black ";
@@ -28,7 +30,9 @@ export default function Lobby({
 
   const handleLeaveGame = async () => {
     if (roomRef.current) {
+      await roomRef.current.untrack();
       await roomRef.current.unsubscribe(); // Leave the presence channel
+
       console.log("✅ Left presence channel");
     }
 
@@ -80,6 +84,14 @@ export default function Lobby({
         })
         .on("presence", { event: "leave" }, ({ key, leftPresences }) => {
           console.log("🔴 Player left:", key, leftPresences);
+        })
+        .on("broadcast", { event: "end-game" }, () => {
+          router.push("/");
+          alert("Room was closed!");
+        })
+        .on("broadcast", { event: "start-game" }, () => {
+          router.push("/");
+          alert("Room was closed!");
         })
         .subscribe(async (status) => {
           console.log("metadata: ", user.user_metadata);
@@ -138,7 +150,20 @@ export default function Lobby({
             Leave Game
           </button>
         </div>
-        <EndGame code={lobbyCode} />
+        <button
+          onClick={() => {
+            closeLobby(lobbyCode);
+            roomRef.current?.send({
+              type: "broadcast",
+              event: "end-game",
+            });
+            router.push("/");
+          }}
+          id="leave-game-button"
+          className={buttonStyle + "bg-red-500 my-5"}
+        >
+          <b>End Game</b>
+        </button>
       </div>
     </>
   );
