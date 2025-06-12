@@ -1,18 +1,9 @@
 "use client";
 
 import React, { use, useEffect, useState } from "react";
-import Link from "next/link";
 import EndGame from "./EndGame";
 import { supabase } from "@/lib/supabaseClient";
 import { useRef } from "react";
-
-type Player = {
-  id: string;
-  is_spy: boolean;
-  lobby_code: string;
-  name: string;
-  role: string;
-};
 
 export default function Lobby({
   params,
@@ -57,6 +48,8 @@ export default function Lobby({
         return;
       }
 
+      console.log("User: ", user);
+
       const room = supabase.channel(`presence-${lobbyCode}`, {
         config: {
           presence: { key: user.id },
@@ -79,6 +72,7 @@ export default function Lobby({
           console.log("🔴 Player left:", key, leftPresences);
         })
         .subscribe(async (status) => {
+          console.log("metadata: ", user.user_metadata);
           if (status === "SUBSCRIBED") {
             await room.track({
               name: user.user_metadata.name || "Unnamed",

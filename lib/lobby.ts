@@ -1,28 +1,19 @@
 import { supabase } from "./supabaseClient";
 
-export async function createLobby(code: string, name: string) {
-  signInUser(name, code);
-
+// For pushing the lobby code and player info to the database
+export async function createLobby(userId: string, code: string, name: string) {
   const { error: lobbyError } = await supabase
     .from("lobbies")
     .insert([{ code, status: "waiting" }]);
-
-  const { error: playerError } = await supabase
-    .from("players")
-    .insert([{ name, lobby_code: code }]);
 
   if (lobbyError) {
     throw new Error(`Failed to create lobby: ${lobbyError.message}`);
   }
 
-  if (playerError) {
-    throw new Error(`Failed to create player: ${playerError.message}`);
-  }
+  await upsertUser(userId, code, name);
 }
 
-export async function joinLobby(code: string, name: string) {
-  signInUser(name, code);
-
+export async function joinLobby(userId: string, code: string, name: string) {
   const { data: lobby, error } = await supabase
     .from("lobbies")
     .select("*")
@@ -31,15 +22,42 @@ export async function joinLobby(code: string, name: string) {
 
   if (!lobby || error) throw new Error("Lobby not found!");
 
-  const { error: playerError } = await supabase
-    .from("players")
-    .insert([{ name, lobby_code: code }]);
+  await upsertUser(userId, code, name);
+}
 
-  if (playerError) throw new Error("Could not join");
+async function upsertUser(userId: string, code: string, name: string) {
+  console.log("name: ", name);
+
+  const { error: upsertError } = await supabase
+    .from("players")
+    .upsert([{ id: userId, name, lobby_code: code }]);
+
+  if (upsertError) {
+    throw new Error(`Failed to upsert user: ${upsertError.message}`);
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    data: { name },
+  });
+
+  if (error) {
+    throw new Error(`Failed to update metadata: ${error.message}`);
+  }
 }
 
 export async function closeLobby(code: string) {
   // First delete all players in the lobby
+  const { data: playerData, error: playerError } = await supabase
+    .from("players")
+    .delete()
+    .eq("lobby_code", code);
+
+  if (playerError) {
+    console.error("Failed to delete lobby:", playerError);
+  } else {
+    console.log("Lobby deleted with code:", code);
+    console.log("Deleted lobby data:", playerData);
+  }
 
   // Then delete the lobby itself
   const { data: lobbyData, error: lobbyError } = await supabase
@@ -53,30 +71,4 @@ export async function closeLobby(code: string) {
     console.log("Lobby deleted with code:", code);
     console.log("Deleted lobby data:", lobbyData);
   }
-}
-
-async function signInUser(name: string, code: string) {
-  const { error: signInError } = await supabase.auth.signInAnonymously();
-  if (signInError) {
-    console.error("Anon login failed:", signInError);
-    return;
-  }
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    console.error("Failed to get user:", userError);
-    return;
-  }
-
-  await supabase.auth.updateUser({
-    data: { name },
-  });
-
-  await supabase
-    .from("players")
-    .upsert([{ id: user.id, name, lobby_code: code }]);
 }
