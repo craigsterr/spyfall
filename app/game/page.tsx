@@ -78,7 +78,7 @@ export default function Lobby() {
     });
   };
 
-  function getClassForStyle(value) {
+  function getClassForStyle(value: number) {
     const baseClass = "p-1 transition-all cursor-pointer ";
     let addedClass = "";
     switch (value) {
