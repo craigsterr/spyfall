@@ -3,7 +3,7 @@ const isProd = process.env.NODE_ENV === "production";
 const repoName = "spyfall";
 
 const nextConfig: NextConfig = {
-  output: "export",
+  // output: "export",
   images: { unoptimized: true },
   basePath: isProd ? `/${repoName}` : "",
   assetPrefix: isProd ? `/${repoName}/` : "",

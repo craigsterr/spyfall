@@ -3,7 +3,16 @@
 import React, { use, useEffect, useState } from "react";
 import EndGame from "./EndGame";
 import { supabase } from "@/lib/supabaseClient";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useRef } from "react";
+
+type Player = {
+  name?: string;
+  presence_ref: string;
+  id?: string;
+  avatarUrl?: string;
+  isHost?: boolean;
+};
 
 export default function Lobby({
   params,
@@ -14,8 +23,8 @@ export default function Lobby({
   const lobbyCode = resolvedParams.code as string;
   const buttonStyle = "py-3 w-30 rounded-full text-black ";
 
-  const [players, setPlayers] = useState<any[]>([]);
-  const roomRef = useRef<any>(null);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const roomRef = useRef<RealtimeChannel>(null);
 
   const handleLeaveGame = async () => {
     if (roomRef.current) {
@@ -63,6 +72,7 @@ export default function Lobby({
           const newState = room.presenceState();
           const players = Object.values(newState).flat();
           console.log("🔁 Presence Sync:", players);
+          console.log("players: ", players);
           setPlayers(players); // this will update your UI
         })
         .on("presence", { event: "join" }, ({ key, newPresences }) => {

@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { UUID } from "crypto";
 
 type Player = {
-  id: string;
+  id: UUID;
   is_spy: boolean;
   lobby_code: string;
   name: string;
