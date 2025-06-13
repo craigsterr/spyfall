@@ -130,7 +130,7 @@ export default function Lobby({
     }
 
     // Navigate away from the page
-    // window.location.href = `${lobbyCode}/game`;
+    window.location.href = `${lobbyCode}/game`;
   };
 
   useEffect(() => {
