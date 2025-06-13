@@ -108,7 +108,7 @@ export default function Lobby({
         if (updatePlayerError) throw updatePlayerError;
       };
 
-      assignRoles();
+      await assignRoles();
 
       const assignLocation = async () => {
         const randLocation =
@@ -122,7 +122,7 @@ export default function Lobby({
         if (assignLocationError) throw assignLocationError;
       };
 
-      assignLocation();
+      await assignLocation();
 
       await roomRef.current.untrack();
       await roomRef.current.unsubscribe(); // Leave the presence channel

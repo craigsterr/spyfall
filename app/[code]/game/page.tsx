@@ -142,7 +142,7 @@ export default function Game({
         .from("players")
         .select("name")
         .eq("is_spy", true)
-        .eq("lobby", lobbyCode);
+        .eq("lobby_code", lobbyCode);
 
       if (errorSpyD) throw errorSpyD;
 
