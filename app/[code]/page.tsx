@@ -15,6 +15,36 @@ type Player = {
   isHost?: boolean;
 };
 
+const locationsArray = [
+  "Airplane",
+  "Bank",
+  "Beach",
+  "Cathedral",
+  "Circus Tent",
+  "Corporate Party",
+  "Crusader Army",
+  "Casino",
+  "Day Spa",
+  "Embassy",
+  "Hospital",
+  "Hotel",
+  "Military Base",
+  "Movie Studio",
+  "Ocean Liner",
+  "Passenger Train",
+  "Pirate Ship",
+  "Polar Station",
+  "Police Station",
+  "Restaurant",
+  "School",
+  "Service Station",
+  "Space Station",
+  "Submarine",
+  "Supermarket",
+  "Theater",
+  "University",
+];
+
 export default function Lobby({
   params,
 }: {
@@ -42,12 +72,65 @@ export default function Lobby({
 
   const handleStartGame = async () => {
     if (roomRef.current) {
+      roomRef.current?.send({
+        type: "broadcast",
+        event: "start-game",
+      });
+
+      const { data, error } = await supabase
+        .from("players")
+        .select("name")
+        .eq("lobby_code", lobbyCode);
+
+      if (error) throw new Error("Error grabbing players: ", error);
+
+      const playersList = data.map((item) => item.name);
+
+      const assignRoles = async () => {
+        const namesLength = playersList.length;
+        const randName = playersList[Math.floor(Math.random() * namesLength)];
+
+        console.log(randName, " is the SPY!");
+
+        const { error: resetError } = await supabase
+          .from("players")
+          .update({ is_spy: false })
+          .eq("lobby_code", lobbyCode);
+
+        if (resetError) throw resetError;
+
+        const { error: updatePlayerError } = await supabase
+          .from("players")
+          .update({ is_spy: true })
+          .eq("name", randName)
+          .eq("lobby_code", lobbyCode);
+
+        if (updatePlayerError) throw updatePlayerError;
+      };
+
+      assignRoles();
+
+      const assignLocation = async () => {
+        const randLocation =
+          locationsArray[Math.floor(Math.random() * locationsArray.length)];
+
+        const { error: assignLocationError } = await supabase
+          .from("lobbies")
+          .update({ location: randLocation })
+          .eq("code", lobbyCode);
+
+        if (assignLocationError) throw assignLocationError;
+      };
+
+      assignLocation();
+
+      await roomRef.current.untrack();
       await roomRef.current.unsubscribe(); // Leave the presence channel
       console.log("✅ Started game");
     }
 
     // Navigate away from the page
-    window.location.href = "/game";
+    // window.location.href = `${lobbyCode}/game`;
   };
 
   useEffect(() => {
@@ -90,8 +173,7 @@ export default function Lobby({
           alert("Room was closed!");
         })
         .on("broadcast", { event: "start-game" }, () => {
-          router.push("/");
-          alert("Room was closed!");
+          router.push(`${lobbyCode}/game`);
         })
         .subscribe(async (status) => {
           console.log("metadata: ", user.user_metadata);
@@ -159,7 +241,7 @@ export default function Lobby({
             });
             router.push("/");
           }}
-          id="leave-game-button"
+          id="end-game-button"
           className={buttonStyle + "bg-red-500 my-5"}
         >
           <b>End Game</b>
