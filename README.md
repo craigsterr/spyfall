@@ -1,6 +1,8 @@
 # Spyfall Unlimited
 
 **Spyfall Unlimited** is a real-time browser-based multiplayer game inspired by the popular party game Spyfall. Players join game sessions, assume roles, and work together to find the spy or avoid detection.
+## 🌐 Live Preview
+Play the game online at [spyfall.craigo.live](https://spyfall.craigo.live)
 
 ## 🚀 Features
 
